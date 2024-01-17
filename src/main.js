@@ -107,10 +107,19 @@ async function performSearch() {
         loadMoreBtn.style.display = 'block';
       } else {
         loadMoreBtn.style.display = 'none';
+        
+        if (gallery.children.length > 0) {
+          iziToast.info({
+            title: "Info",
+            message: "We're sorry, but you've reached the end of search results.",
+            position: "topRight",
+          });
+        }
       }
-
       currentPage++;
     }
+
+    
   } catch (err) {
     loader.style.display = 'none';
     console.log(err);
