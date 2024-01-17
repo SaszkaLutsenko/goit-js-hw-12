@@ -1,154 +1,168 @@
-'use strict';
-import iziToast from 'izitoast';
-import 'izitoast/dist/css/iziToast.min.css';
-import simpleLightbox from 'simplelightbox';
-import 'simplelightbox/dist/simple-lightbox.min.css';
-import axios from 'axios';
+import SimpleLightbox from "simplelightbox";
+import "simplelightbox/dist/simple-lightbox.min.css";
+import iziToast from "izitoast";
+import "izitoast/dist/css/iziToast.min.css";
+import axios from "axios";
 
-const form = document.querySelector('.form');
-const input = document.querySelector('#input');
-const gallery = document.querySelector('.gallery');
+const fetchUsersBtn = document.querySelector(".form");
+const gallery = document.querySelector(".gallery");
+const textInput = document.querySelector('.text-input')
+const modal = new SimpleLightbox('.gallery a', {
+  captionsData: 'alt',
+  captionDelay: 250,
+});
+
 const loader = document.querySelector('.loader');
-const loadMoreBtn = document.querySelector('.load-more-btn');
-let currentPage = 1;
-let searchQuery = '';
-
 loader.style.display = 'none';
-loadMoreBtn.style.display = 'none';
 
-form.addEventListener('submit', async event => {
+const buttonLoadMore = document.querySelector('.load-more')
+buttonLoadMore.style.display = 'none';
+
+let currentPage = 1;
+let currentSearch = '';
+
+
+fetchUsersBtn.addEventListener('submit', async (event) => {
   event.preventDefault();
-  searchQuery = input.value.trim();
+  const usersValue = textInput.value;
+
+  currentSearch = usersValue;
+
   gallery.innerHTML = '';
-  input.value = '';
+  textInput.value = '';
   loader.style.display = 'block';
-  currentPage = 1;
-  loadMoreBtn.style.display = 'none';
-
-  await performSearch();
-});
-
-loadMoreBtn.addEventListener('click', async () => {
-  loader.style.display = 'block';
-  await performSearch();
-
-  const cardHeight = getGalleryCardHeight();
-  smoothScrollBy(cardHeight * 2);
-});
-
-async function performSearch() {
-  const searchParams = new URLSearchParams({
-    key: '41777094-15d23fa072ac8c02efe5e3565',
-    q: searchQuery,
-    image_type: 'photo',
-    orientation: 'horizontal',
-    safesearch: 'true',
-    page: currentPage,
-    per_page: 40,
-  });
+  buttonLoadMore.style.display = 'none';
 
   try {
-    const response = await axios.get(
-      `https://pixabay.com/api/?${searchParams}`
-    );
+    const data = await fetchImages(currentSearch, 1);
 
-    if (!response.data.hits || !response.data.hits.length) {
-      iziToast.error({
-        message:
-          'Sorry, there are no images matching your search query. Please try again!',
-        theme: 'dark',
-        backgroundColor: '#EF4040',
-        titleColor: 'white',
-        messageSize: '16',
-        titleSize: '16',
-        position: 'topRight',
-        maxWidth: 430,
-      });
-    } else {
-      const imgs = response.data.hits.reduce(
-        (
-          html,
-          {
-            webformatURL,
-            largeImageURL,
-            tags,
-            likes,
-            views,
-            comments,
-            downloads,
-          }
-        ) =>
-          html +
-          `<li class="gallery-item">
-          <a class="gallery-link" href="${largeImageURL}">
-            <img class="gallery-image" src="${webformatURL}" alt="${tags}" />
-          </a>          
-          <div class="description">
-            <p>Likes:<span>${likes}</span></p>
-            <p>Views:<span>${views}</span></p>
-            <p>Comments:<span>${comments}</span></p>
-            <p>Downloads:<span>${downloads}</span></p>
-          </div> 
-        </li>`,
-        ''
-      );
-
-      gallery.innerHTML += imgs;
-
-      let modal = new simpleLightbox('ul.gallery a', {
-        captionDelay: 250,
-        captionsData: 'alt',
-      });
-
-      modal.refresh();
-
-      // Display Load More button if there are more pages
-      if (response.data.totalHits > currentPage * 40) {
-        loadMoreBtn.style.display = 'block';
-      } else {
-        loadMoreBtn.style.display = 'none';
-        
-      
-          iziToast.info({
-             message: "We're sorry, but you've reached the end of search results.",
-             messageColor: '#FAFAFB',
-             backgroundColor: '#008CBA',
-              position: 'topRight'
-          });
-        
-      }
-      currentPage++;
+    if (data.hits.length === 0) {
+      showAlert('Sorry, there are no images matching your search query. Please try again!');
+      return;
     }
 
-    
-  } catch (err) {
+    const imagesHTML = data.hits.reduce((html, image) => {
+      return html + imageCard(image);
+    }, '');
+
+    gallery.innerHTML = imagesHTML;
+    modal.refresh();
+
+    updateLoadMoreButton(data.totalHits);
+
+  } catch (error) {
+    showAlert(error.toString());
+  }
+});
+
+buttonLoadMore.addEventListener('click', async () => {
+  loader.style.display = 'block';
+  buttonLoadMore.style.display = 'none';
+
+  try {
+    const data = await fetchImages(currentSearch, currentPage + 1);
+
     loader.style.display = 'none';
-    console.log(err);
-  } finally {
-    loader.style.display = 'none';
+
+    if (data.hits.length === 0) {
+      showAlert('Sorry, there are no more images for your search query.');
+      return;
+    }
+
+    const additionalImagesHTML = data.hits.reduce((html, image) => {
+      return html + imageCard(image);
+    }, '');
+
+    gallery.innerHTML += additionalImagesHTML;
+    modal.refresh();
+    currentPage++;
+
+    updateLoadMoreButton(data.totalHits);
+    makeSmoothScrolling();
+
+  } catch (error) {
+    showAlert(error.toString());
+  }
+});
+
+async function fetchImages(query, page) {
+  const searchParams = new URLSearchParams({
+    key: '41485835-9295c11e9848689b047a2c35a',
+    q: query,
+    image_type: 'photo',
+    orientation: 'horizontal',
+    safesearch: true,
+    page: page,
+    per_page: 40
+  });
+
+  const response = await axios.get(`https://pixabay.com/api/?${searchParams}`);
+
+  loader.style.display = 'none';
+
+  if (response.status !== 200) {
+    throw new Error(response.status);
+  }
+
+  return response.data;
+}
+
+function imageCard(images) {
+  return `<li>
+      <a href="${images.largeImageURL}">
+        <img src="${images.webformatURL}" alt="${images.tags}">
+      </a>
+      <div class="info">
+        <div class="image-info">
+          <span>Likes</span>
+          <span class="image-value">${images.likes}</span>
+        </div>
+        <div class="image-info">
+          <span>Views</span>
+          <span class="image-value">${images.views}</span>
+        </div>
+        <div class="image-info">
+          <span>Comments</span>
+          <span class="image-value">${images.comments}</span>
+        </div>
+        <div class="image-info">
+          <span>Downloads</span>
+          <span class="image-value">${images.downloads}</span>
+        </div>
+      </div>
+    </li>`;
+}
+
+function showAlert(message) {
+  iziToast.error({
+    message: message,
+    messageColor: '#FAFAFB',
+    backgroundColor: '#EF4040',
+    position: 'topRight'
+  });
+}
+
+function updateLoadMoreButton(totalHits) {
+  if (totalHits > currentPage * 40) {
+    buttonLoadMore.style.display = 'block';
+  } else {
+    buttonLoadMore.style.display = 'none';
+    iziToast.info({
+      message: "We're sorry, but you've reached the end of search results.",
+      messageColor: '#FAFAFB',
+      backgroundColor: '#008CBA',
+      position: 'topRight'
+    });
   }
 }
 
-function getGalleryCardHeight() {
-  const galleryCard = document.querySelector('.gallery-item');
-  const cardHeight = galleryCard
-    ? galleryCard.getBoundingClientRect().height
-    : 0;
-  return cardHeight;
-}
-
-function smoothScrollBy(distance) {
-  const initialTime = performance.now();
-  const duration = 600; // Set your preferred duration (in milliseconds)
-  const scroll = currentTime => {
-    const elapsedTime = currentTime - initialTime;
-    window.scrollBy({
-      top: distance * Math.sin((elapsedTime / duration) * (Math.PI / 2)),
-      behavior: 'smooth',
-    });
-    if (elapsedTime < duration) {
-      requestAnimationFrame(scroll);
-    }
-  };
-  requestAnimationFrame(scroll);
+function makeSmoothScrolling() {
+  const galleryItemHeight = document.querySelector('.gallery li').
+    getBoundingClientRect().height;
+  
+  window.scrollBy({
+    top: galleryItemHeight * 2,
+    left: 0,
+    behavior: 'smooth'
+  });
 }
