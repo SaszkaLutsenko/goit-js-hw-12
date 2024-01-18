@@ -4,31 +4,50 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/goit-js-hw-12/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Vanilla App Template</title>
+    <title>Homework 12</title>
+
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/modern-normalize/2.0.0/modern-normalize.min.css"
+    />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+
     
     <script type="module" crossorigin src="/goit-js-hw-12/commonHelpers.js"></script>
-    <link rel="modulepreload" crossorigin href="/goit-js-hw-12/assets/vendor-c145bea9.js">
-    <link rel="stylesheet" href="/goit-js-hw-12/assets/vendor-fd638ea2.css">
-    <link rel="stylesheet" href="/goit-js-hw-12/assets/index-9b0d8124.css">
+    <link rel="modulepreload" crossorigin href="/goit-js-hw-12/assets/vendor-bad0427b.js">
+    <link rel="stylesheet" href="/goit-js-hw-12/assets/vendor-eb6030bc.css">
+    <link rel="stylesheet" href="/goit-js-hw-12/assets/index-c3dec209.css">
   </head>
+
   <body>
-    <form class="form">
-      <input
-        type="text"
-        name="search"
-        placeholder="Search images..."
-        required
-      />
-      <button class="search-btn" type="submit">Search</button>
-    </form>
+    <header class="header">
+      <form class="search-form" id="search-form">
+        <input
+          id="search-input"
+          class="search-input"
+          type="text"
+          name="searchQuery"
+          autocomplete="off"
+          placeholder="Search images..."
+        />
+        <button class="search-btn" type="submit">Search</button>
+      </form>
+    </header>
 
-    <div class="gallery-box">
-      <span class="loader"></span>
+    <main class="main">
       <ul class="gallery"></ul>
-    </div>
+      <button type="button" class="load-more">Load more</button>
+      <div class="loader"></div>
+    </main>
 
-    <button class="load-more-btn">Load more</button> 
-    
     
   </body>
 </html>
+
+
